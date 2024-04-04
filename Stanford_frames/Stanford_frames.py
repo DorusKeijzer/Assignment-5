@@ -1,6 +1,13 @@
 #ResNet34 network
 
+import torch
 import torch.nn as nn
+from torchvision import transforms
+from torch.utils.data import DataLoader
+from torchvision.datasets import ImageFolder
+
+num_epochs = 2
+num_classes = 12
 
 def conv3x3(in_planes, out_planes, stride=1):
     return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=False)
@@ -38,7 +45,7 @@ class BasicBlock(nn.Module):
 
 class ResNet(nn.Module):
 
-    def __init__(self, block, layers, num_classes=12):
+    def __init__(self, block, layers, num_classes):
         super(ResNet, self).__init__()
         self.inplanes = 64
         self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
@@ -93,3 +100,40 @@ class ResNet(nn.Module):
 
 def resnet34():
     return ResNet(BasicBlock, [3, 4, 6, 3])
+
+# Define data transformations
+transform = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.RandomHorizontalFlip(),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+])
+
+# Load the dataset
+dataset = ImageFolder(root='JPEGImages', transform=transform)
+
+# Define the dataloader for your dataset
+dataloader = DataLoader(dataset, batch_size=32, shuffle=True,
+                       num_workers=4)
+
+# Define the model
+model = resnet34()
+
+# Define loss function and optimizer
+criterion = nn.CrossEntropyLoss()
+optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+
+# Training loop
+for epoch in range(num_epochs):
+    for images, labels in dataloader:
+        # Forward pass
+        outputs = model(images)
+        loss = criterion(outputs, labels)
+
+        # Backward pass and optimization
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+    # Print training stats
+    print('Epoch [{}/{}], Loss: {:.4f}'.format(epoch+1, num_epochs, loss.item()))
