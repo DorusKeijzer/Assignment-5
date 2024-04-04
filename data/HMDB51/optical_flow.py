@@ -1,64 +1,68 @@
-import cv2
+import cv2 as cv
 from glob import glob
 import numpy as np
+from math import ceil
 
-def get_output(video_path:str)-> str:
+def split_indices(length: int, intervals: int):
+    """Divides the input into the given number of intervals excluding the first frame. 
+        If intervals is 1, take the mid point"""
+    if intervals == 1:
+        return [length//2]
+    section_size = length // intervals
+    indices = [section_size * i for i in range(1, intervals)]
+    indices.append(length)
+    return indices
+
+
+def get_output(video_path:str, frame_no: int)-> str:
     filename = video_path.split("\\")[-1]
-    output = "optical_flow" + filename[:-4] + "_opticalflow.avi"
+    output = "optical_flow/" + filename[:-4] + "_opticalflow_" +str(frame_no) + ".npy"
     return output
 
-def calculate_optical_flow(video_path: str, output_path: str) -> None:
+def calculate_optical_flow(video_path: str, intervals: int) -> None:
     # Open the video file
-    cap = cv2.VideoCapture(video_path)
+    cap = cv.VideoCapture(video_path)
+    filenames = []
 
     # Initialize variables for the first frame
     ret, frame1 = cap.read()
-    prvs = cv2.cvtColor(frame1, cv2.COLOR_BGR2GRAY)
+    prvs = cv.cvtColor(frame1, cv.COLOR_BGR2GRAY)
     hsv = np.zeros_like(frame1)
     hsv[...,1] = 255
 
-    # Define the codec and create VideoWriter object
-    fourcc = cv2.VideoWriter_fourcc(*'XVID')
-    out = cv2.VideoWriter(output_path, fourcc, 20.0, (frame1.shape[1], frame1.shape[0]))
+    length = int(cap.get(cv.CAP_PROP_FRAME_COUNT))
+    split = split_indices(length, intervals+1) 
+    frame_no = 0
+    interval_no = 0
 
     while(cap.isOpened()):
-        # Read the current frame and convert it to grayscale
+        # read the current image
         ret, frame2 = cap.read()
         if not ret:
+            print("not ret")
             break
-        next = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
-
-        # Calculate the optical flow using Lucas-Kanade method
-        flow = cv2.calcOpticalFlowFarneback(prvs, next, None, 0.5, 3, 15, 3, 5, 1.2, 0)
-
-        # Convert optical flow to polar coordinates for visualization
-        mag, ang = cv2.cartToPolar(flow[...,0], flow[...,1])
-        hsv[...,0] = ang*180/np.pi/2
-        hsv[...,2] = cv2.normalize(mag, None, 0, 255, cv2.NORM_MINMAX)
-
-        # Convert HSV to BGR for visualization
-        bgr = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
-
-        # Write the frame with optical flow visualization to the output video
-        out.write(bgr)
-
-        # Display the frame
-        cv2.imshow('Optical flow', bgr)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        next = cv.cvtColor(frame2, cv.COLOR_BGR2GRAY)
+        if frame_no in split:
+            # Calculate the optical flow using Lucas-Kanade method
+            flow = cv.calcOpticalFlowFarneback(prvs, next, None, 0.5, 3, 15, 3, 5, 1.2, 0)
+            filename = get_output(video_path, interval_no)
+            np.save(filename, flow)
+            interval_no+=1
+        
+        if interval_no == intervals:
             break
+        frame_no += 1
 
         # Update the previous frame
         prvs = next
 
-    # Release the video capture and writer objects
     cap.release()
-    out.release()
-    cv2.destroyAllWindows()
 
 
 if __name__ == "__main__":
+    INTERVALS_PER_VIDEO = 4
+
     files = glob("videos/*")
-    for file in files:
+    for i, file in enumerate(files):
         print(file)
-        output = get_output
-        calculate_optical_flow(file, output)
+        filenames = calculate_optical_flow(file, INTERVALS_PER_VIDEO)
