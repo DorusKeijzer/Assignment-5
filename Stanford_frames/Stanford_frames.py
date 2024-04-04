@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader
 from torchvision.datasets import ImageFolder
 
 num_epochs = 2
-num_classes = 12
+num_classes = 7
 
 def conv3x3(in_planes, out_planes, stride=1):
     return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=False)
