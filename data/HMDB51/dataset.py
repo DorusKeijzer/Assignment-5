@@ -2,12 +2,9 @@ import os
 import pandas as pd
 from torchvision.io import read_image
 from torch.utils.data import Dataset
-
-import os
-import pandas as pd
-from torchvision.io import read_image
+import numpy as np
 from torchvision.transforms.functional import resize
-from torch.utils.data import Dataset
+from PIL import Image
 
 class HMDB51Dataset(Dataset):
     def __init__(self, annotations_file, image_dir, transform=None, target_transform=None, resize_shape=(240, 320)):
@@ -22,8 +19,7 @@ class HMDB51Dataset(Dataset):
 
     def __getitem__(self, idx):
         image_path = os.path.join(self.image_dir, self.image_labels.iloc[idx, 0])
-        image = read_image(image_path)
-        image = resize(image, self.resize_shape)  # Resize image
+        image = np.load(image_path)
         label = self.image_labels.iloc[idx, 1]
         if self.transform:
             image = self.transform(image)
@@ -32,17 +28,17 @@ class HMDB51Dataset(Dataset):
         return image, label
 
     
-mid_frame_test_data = HMDB51Dataset("mid_frame_test.csv", "mid_frames", resize_shape=(240, 320))
-mid_frame_training_data = HMDB51Dataset("mid_frame_train.csv", "mid_frames", resize_shape=(240, 320))
+mid_frame_test_data = HMDB51Dataset("mid_frame_test.csv", "mid_frames")
+mid_frame_training_data = HMDB51Dataset("mid_frame_train.csv", "mid_frames")
 
 from torch.utils.data import DataLoader
 
-mid_frame_train_dataloader = DataLoader(mid_frame_training_data, batch_size=64, shuffle=True)
-mid_frame_test_dataloader = DataLoader(mid_frame_test_data, batch_size=64, shuffle=True)
+mid_frame_train_dataloader = DataLoader(mid_frame_training_data, batch_size=1, shuffle=True)
+mid_frame_test_dataloader = DataLoader(mid_frame_test_data, batch_size=1, shuffle=True)
 
 
 optical_flow_test_data = HMDB51Dataset("of_test.csv", "optical_flow", resize_shape=(240, 320))
 optical_flow_training_data = HMDB51Dataset("of_train.csv", "optical_flow", resize_shape=(240, 320))
 
-optical_flow_train_dataloader = DataLoader(optical_flow_training_data, batch_size=64, shuffle=True)
-optical_flow_test_dataloader = DataLoader(optical_flow_test_data, batch_size=64, shuffle=True)
+optical_flow_train_dataloader = DataLoader(optical_flow_training_data, batch_size=1, shuffle=True)
+optical_flow_test_dataloader = DataLoader(optical_flow_test_data, batch_size=1, shuffle=True)
