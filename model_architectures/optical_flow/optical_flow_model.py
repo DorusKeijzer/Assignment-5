@@ -29,13 +29,6 @@ class model(nn.Module):
         # dropout layer
         self.dropout = nn.Dropout(0.5)
         
-        self.init_weights()
-
-    def init_weights(self):
-        for m in self.modules():
-            if isinstance(m, nn.Linear):
-                nn.init.xavier_normal_(m.weight)
-
     def forward(self, x):
         # Input size: [batch_size, channels, height, width]
         # Transpose the input tensor to [batch_size, channels, height, width]

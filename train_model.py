@@ -126,8 +126,7 @@ def plot_graphs(training_loss, eval_loss, training_accuracy, eval_accuracy, titl
     plt.suptitle(title, fontsize=16)
 
     plt.tight_layout()
-    plt.show()
-    plt.savefig("results/{title}.png")
+    plt.savefig(f"results/{title}.png")
 
 def savemodel(model_name):
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -173,9 +172,9 @@ if __name__ == "__main__":
 
     print(f"training {model.name} from {model_path} on {storage_location} data.")
 
-    from torch import optim
+    from torch import optims
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr= 0.004)
+    optimizer = optim.Adam(model.parameters(), lr= 0.001)
     def signal_handler(sig, frame):
         # This function will be called when a keyboard interrupt is detected
         print('Keyboard interrupt detected. Storing best model...')
