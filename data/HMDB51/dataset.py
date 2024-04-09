@@ -9,7 +9,7 @@ from PIL import Image
 class HMDB51Dataset(Dataset):
     def __init__(self, annotations_file, image_dir, transform=None, target_transform=None, resize_shape=(240, 320)):
         self.image_labels = pd.read_csv(annotations_file)
-        self.image_dir = image_dir
+        self.image_dir = "data/HMDB51/" + image_dir
         self.transform = transform
         self.target_transform = target_transform
         self.resize_shape = resize_shape

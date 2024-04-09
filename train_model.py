@@ -34,7 +34,7 @@ def train(net: nn.Module, train_loader, val_loader, criterion, optimizer: torch.
     val_losses = []
     val_accuracies = []
     training_accuracies = []
-    best_epoch = epoch = 1e10
+    best_val_loss = 1e10
     best_epoch = 0
     best_model = None
     for epoch in range(1):
@@ -98,17 +98,17 @@ if __name__ == "__main__":
     from sys import argv
     # train_model "model path" "dataset" 
     model_path = argv[1]
-    model_name = argv[2]
-    dataset = argv[3]
+    dataset = argv[2]
     import importlib.util
 
-    def load_python_file(file_path, model_name):
-        spec = importlib.util.spec_from_file_location(model_name, file_path)
+    def load_python_file(file_path):
+        spec = importlib.util.spec_from_file_location("model", file_path)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         return module
 
-    model = load_python_file(model_path, model_name)
+    model: torch.nn.Module = load_python_file(model_path).model()
+
     if dataset == "OF":
         from data.HMDB51.dataset import optical_flow_test_dataloader, optical_flow_train_dataloader
         test_data = optical_flow_test_dataloader
@@ -118,12 +118,13 @@ if __name__ == "__main__":
         from data.HMDB51.dataset import mid_frame_test_dataloader, mid_frame_train_dataloader
         test_data = mid_frame_test_dataloader
         training_data = mid_frame_train_dataloader
-        storage_location = "frame/HMDB"
+        storage_location = "frames/HMDB"
 
     if dataset == "stanford_frames":
-        pass
+        # TODO
+        storage_location = "frames/HMDB"
 
-    print(f"training {model_name} from {model_path} on {storage_location} data.")
+    print(f"training {model.name} from {model_path} on {storage_location} data.")
 
     from torch import optim
     criterion = nn.CrossEntropyLoss()
@@ -133,6 +134,6 @@ if __name__ == "__main__":
     from datetime import datetime
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
-    filename = f"{model_name}_epoch_{best_epoch}_{timestamp}.pth"
-    print("Saving best model to {filename}")
-    torch.save(best_model, f"{storage_location}/{filename}")
+    filename = f"{model.name}_epoch_{best_epoch}_{timestamp}.pth"
+    print(f"Saving best model to {filename}")
+    torch.save(best_model, f"trained_models/{storage_location}/{filename}")

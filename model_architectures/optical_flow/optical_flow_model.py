@@ -4,12 +4,12 @@ import torch.nn.functional as F
 import torch.nn.init as init
 import torch
 
-class optical_flow_model(nn.Module):
+class model(nn.Module):
     name = "three_convolution" #change to reflect model version
     intermediate_layers = False
 
     def __init__(self):
-        super(optical_flow_model, self).__init__()
+        super(model, self).__init__()
         # Define the convolutional layers
         # Convolutional layers
         self.conv1 = nn.Conv2d(in_channels=2, out_channels=16, kernel_size=3, padding=1)
