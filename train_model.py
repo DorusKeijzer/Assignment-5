@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.nn.init as init
 import torch
+from torch import optim
 import matplotlib.pyplot as plt
 import numpy as np
 training_losses = []
@@ -167,12 +168,14 @@ if __name__ == "__main__":
         storage_location = "frames/HMDB"
 
     if dataset == "stanford_frames":
-        # TODO
-        storage_location = "frames/HMDB"
+        from data.stanford40.dataset import val_dataloader, test_dataloader, train_dataloader
+        storage_location = "frames/stanford"
+        val_data = val_dataloader
+        training_data = train_dataloader
+        test_data = test_dataloader
 
     print(f"training {model.name} from {model_path} on {storage_location} data.")
 
-    from torch import optims
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr= 0.001)
     def signal_handler(sig, frame):
@@ -185,7 +188,7 @@ if __name__ == "__main__":
 
     train( model, 
             training_data, 
-            test_data, 
+            val_data, 
             criterion, 
             optimizer, 
             epochs,
