@@ -5,6 +5,13 @@ import torch.nn.init as init
 import torch
 import matplotlib.pyplot as plt
 import numpy as np
+training_losses = []
+val_losses = []
+val_accuracies = []
+training_accuracies = []
+best_model = None
+best_epoch = 0
+
 
 def evaluate_model(model, criterion, data_loader):
     loss = 0.0
@@ -38,18 +45,12 @@ def train(model: nn.Module,
           epochs: int,
           decrease_learning_rate = False):            #change last option to 'true' to implement decreasing learning rate for choice task 1
     print("Starting training...")
-    training_losses = []
-    val_losses = []
-    val_accuracies = []
-    training_accuracies = []
     best_val_loss = 1e10
-    best_epoch = 0
-    best_model = None
     for epoch in range(epochs):
         print(f"Epoch {epoch+1}")
         print("=====================================")
         # if deacrease_learning_rate is set to True:
-        if decrease_learning_rate and epoch > 0 and epoch % 5 == 0:
+        if decrease_learning_rate and epoch > 0 and epoch % 10 == 0:
             # halves learning rate every 5th epoch for choice task #1
             for param_group in optimizer.param_groups:
                 lr = param_group['lr']
@@ -93,12 +94,8 @@ def train(model: nn.Module,
         print(f'Validation Loss: {val_loss:>20.4f}\nValidation Accuracy: {val_accuracy:>16.4f}')
         print(f'Training Loss: {T_loss:>22.4f}\nTraining Accuracy: {T_acc:>18.4f}\n')
     
+    print(f"Finished training after {epochs} epochs")
     print(f"Best epoch: {best_epoch}")
-    return {"val_loss":val_losses, 
-            "train_loss": training_losses, 
-            "val_accuracies": val_accuracies, 
-            "training_accuracy": training_accuracies
-            }, best_epoch, best_model
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -130,10 +127,21 @@ def plot_graphs(training_loss, eval_loss, training_accuracy, eval_accuracy, titl
 
     plt.tight_layout()
     plt.show()
+    plt.savefig("results/{title}.png")
 
+def savemodel(model_name):
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    filename = f"{model_name}_epoch_{best_epoch}_{timestamp}"
+    plot_graphs(training_losses,val_losses, training_accuracies, val_accuracies , filename)
 
+    print(f"Saving best model to {filename}.pth")
+    torch.save(best_model, f"trained_models/{storage_location}/{filename}.pth")
 if __name__ == "__main__":
+    import signal
+    import sys
+    from datetime import datetime
     from sys import argv
+
     # train_model "model path" "dataset" 
     model_path = argv[1]
     dataset = argv[2]
@@ -167,27 +175,20 @@ if __name__ == "__main__":
 
     from torch import optim
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr= 0.001)
+    optimizer = optim.Adam(model.parameters(), lr= 0.004)
+    def signal_handler(sig, frame):
+        # This function will be called when a keyboard interrupt is detected
+        print('Keyboard interrupt detected. Storing best model...')
+        savemodel(f"{model.name}_interupted")
+        sys.exit(0)
+    # Register the signal handler
+    signal.signal(signal.SIGINT, signal_handler)
 
-    trainingstats, best_epoch, best_model = train(model, 
-                                                  training_data, 
-                                                  test_data, 
-                                                  criterion, 
-                                                  optimizer, 
-                                                  epochs)
-    from datetime import datetime
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    #     return {"val_loss":val_losses, 
-            # "train_loss": training_losses, 
-            # "val_accuracies": val_accuracies, 
-            # "training_accuracy": training_accuracies
-
-    plot_graphs(trainingstats["train_loss"], 
-                trainingstats["val_loss"],
-                trainingstats["val_accuracies"],
-                trainingstats["training_accuracy"],
-                model.name)
-    
-    filename = f"{model.name}_epoch_{best_epoch}_{timestamp}.pth"
-    print(f"Saving best model to {filename}")
-    torch.save(best_model, f"trained_models/{storage_location}/{filename}")
+    train( model, 
+            training_data, 
+            test_data, 
+            criterion, 
+            optimizer, 
+            epochs,
+            decrease_learning_rate=True)
+    savemodel(model.name)

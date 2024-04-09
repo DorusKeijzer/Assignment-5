@@ -42,7 +42,7 @@ class model(nn.Module):
         # Fully connected layers
         x = F.relu(self.fc1(x))
         x = self.dropout(x)
-        x = F.softmax(self.fc2(x), dim=0)
+        x = F.softmax(self.fc2(x), dim=1)
         
         return x
     
