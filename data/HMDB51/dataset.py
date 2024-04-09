@@ -28,8 +28,8 @@ class HMDB51Dataset(Dataset):
         return image, label
 
     
-mid_frame_test_data = HMDB51Dataset("mid_frame_test.csv", "mid_frames")
-mid_frame_training_data = HMDB51Dataset("mid_frame_train.csv", "mid_frames")
+mid_frame_test_data = HMDB51Dataset("data/HMDB51/mid_frame_test.csv", "mid_frames")
+mid_frame_training_data = HMDB51Dataset("data/HMDB51/mid_frame_train.csv", "mid_frames")
 
 from torch.utils.data import DataLoader
 
@@ -37,8 +37,8 @@ mid_frame_train_dataloader = DataLoader(mid_frame_training_data, batch_size=1, s
 mid_frame_test_dataloader = DataLoader(mid_frame_test_data, batch_size=1, shuffle=True)
 
 
-optical_flow_test_data = HMDB51Dataset("of_test.csv", "optical_flow", resize_shape=(240, 320))
-optical_flow_training_data = HMDB51Dataset("of_train.csv", "optical_flow", resize_shape=(240, 320))
+optical_flow_test_data = HMDB51Dataset("data/HMDB51/of_test.csv", "optical_flow", resize_shape=(240, 320))
+optical_flow_training_data = HMDB51Dataset("data/HMDB51/of_train.csv", "optical_flow", resize_shape=(240, 320))
 
 optical_flow_train_dataloader = DataLoader(optical_flow_training_data, batch_size=1, shuffle=True)
 optical_flow_test_dataloader = DataLoader(optical_flow_test_data, batch_size=1, shuffle=True)
