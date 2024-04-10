@@ -51,7 +51,7 @@ def train(model: nn.Module,
         print(f"Epoch {epoch+1}")
         print("=====================================")
         # if deacrease_learning_rate is set to True:
-        if decrease_learning_rate and epoch > 0 and epoch % 10 == 0:
+        if decrease_learning_rate and epoch > 0 and epoch % 4 == 0:
             # halves learning rate every 5th epoch for choice task #1
             for param_group in optimizer.param_groups:
                 lr = param_group['lr']
@@ -60,6 +60,7 @@ def train(model: nn.Module,
             print(f"Halved learning rate to {lr}")
 
         train_loss = 0.0
+        interval = int(len(train_loader)/8)
         for i, (inputs, labels) in enumerate(train_loader):
             optimizer.zero_grad()
 
@@ -76,7 +77,7 @@ def train(model: nn.Module,
             optimizer.step()
             train_loss += loss.item() * inputs.size(0)
 
-            if i % 100 == 0 or i == len(train_loader):  # Print when a batch is completed or it's the last batch
+            if i % interval == 0 or i == len(train_loader):  # Print when a batch is completed or it's the last batch
                 avg_train_loss = train_loss / ((i + 1) * 1)
                 print(f"Batch: {i:>3}/{len(train_loader)}, training loss: {avg_train_loss:.4f}")
 
@@ -136,6 +137,7 @@ def savemodel(model_name):
 
     print(f"Saving best model to {filename}.pth")
     torch.save(best_model, f"trained_models/{storage_location}/{filename}.pth")
+
 if __name__ == "__main__":
     import signal
     import sys
@@ -186,11 +188,13 @@ if __name__ == "__main__":
     # Register the signal handler
     signal.signal(signal.SIGINT, signal_handler)
 
-    train( model, 
+    # grid search
+
+    train(  model, 
             training_data, 
             val_data, 
             criterion, 
             optimizer, 
             epochs,
-            decrease_learning_rate=True)
-    savemodel(model.name)
+            decrease_learning_rate=False)
+    savemodel(f"{model.name}")

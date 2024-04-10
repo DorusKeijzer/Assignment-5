@@ -15,14 +15,15 @@ class model(nn.Module):
         self.conv1 = nn.Conv2d(in_channels=3, out_channels=16, kernel_size=3, padding=1)
         self.conv2 = nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3, padding=1)
         self.conv3 = nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, padding=1)
-        self.conv4 = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1)
-        
+        self.conv4 = nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3, padding=1)
+        self.conv5 = nn.Conv2d(in_channels=128, out_channels=128, kernel_size=3, padding=1)
+
         # pooling layers
-        self.adaptivepool = nn.AdaptiveMaxPool2d((128, 128))
+        self.adaptivepool = nn.AdaptiveMaxPool2d((256, 256))
         self.maxpool = nn.MaxPool2d((2,2),2)
 
         # Fully connected layers
-        self.fc1 = nn.Linear(4096, 256)
+        self.fc1 = nn.Linear(8192, 256)
         self.fc2 = nn.Linear(256, 64)
         self.fc3 = nn.Linear(64, 12)
         
@@ -41,8 +42,11 @@ class model(nn.Module):
         x = self.maxpool(x)
         x = F.relu(self.conv4(x))
         x = self.maxpool(x)
-        x = F.relu(self.conv4(x))
+        x = F.relu(self.conv5(x))
         x = self.maxpool(x)
+        x = F.relu(self.conv5(x))
+        x = self.maxpool(x)
+
 
         # Flatten the output for fully connected layers
         x = torch.flatten(x, 1)
