@@ -87,6 +87,7 @@ def train(model: nn.Module,
             best_epoch = epoch + 1
             best_model = model.state_dict()
             print("This is the best model so far. Hurray.")
+
         T_loss, T_acc = evaluate_model(model, criterion, train_loader)
 
         val_losses.append(val_loss)
@@ -109,7 +110,7 @@ def plot_graphs(training_loss, eval_loss, training_accuracy, eval_accuracy, titl
     # Plot training and eval loss over time
     epochs = np.arange(1, len(training_loss) + 1)
     axes[0].plot(epochs, training_loss, label='Training Loss', color='black')
-    axes[0].plot(epochs, eval_loss, label='Eval Loss', color='red', linestyle='--')
+    axes[0].plot(epochs, eval_loss, label='Eval Loss', color='gray', linestyle='--')
     axes[0].set_xlabel('Epoch')
     axes[0].set_ylabel('Loss')
     axes[0].set_xticks(epochs)
@@ -208,3 +209,85 @@ if __name__ == "__main__":
             epochs,
             decrease_learning_rate=False)
     savemodel(f"{model.name}")
+
+
+###### CHATGPT
+
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torchvision.datasets import YourDataset  # Import your dataset class
+from torch.utils.data import DataLoader
+import torchvision.transforms as transforms
+from torchvision.models import YourPretrainedModel  # Import your pretrained model class
+from sklearn.model_selection import train_test_split
+
+# Define your FusionModel class here (same as before)
+
+# Define hyperparameters
+batch_size = 32
+learning_rate = 0.001
+num_epochs = 10
+num_classes = 10  # Adjust this according to your dataset
+
+# Define your dataset and data loaders
+transform = transforms.Compose([
+    # Add your desired transformations here
+    transforms.Resize((224, 224)),  # Example transformation, adjust as needed
+    transforms.ToTensor(),
+])
+
+# Example: Splitting dataset into train and test sets
+# Replace with your own dataset loading and splitting logic
+dataset = YourDataset(transform=transform)
+train_set, test_set = train_test_split(dataset, test_size=0.2, random_state=42)
+
+train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
+test_loader = DataLoader(test_set, batch_size=batch_size, shuffle=False)
+
+# Initialize pre-trained models for optical flow and regular images
+cnn_opticalflow = YourPretrainedModel()  # Replace with your own pre-trained model
+cnn_image = YourPretrainedModel()  # Replace with your own pre-trained model
+
+# Initialize the fusion model
+fusion_model = FusionModel(cnn_opticalflow, cnn_image, fusion_dim=512, num_classes=num_classes)
+
+# Define loss function and optimizer
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.Adam(fusion_model.parameters(), lr=learning_rate)
+
+# Training loop
+for epoch in range(num_epochs):
+    fusion_model.train()
+    running_loss = 0.0
+    
+    for batch_idx, (opticalflow, image, labels) in enumerate(train_loader):
+        optimizer.zero_grad()
+        
+        # Forward pass
+        outputs = fusion_model(opticalflow, image)
+        loss = criterion(outputs, labels)
+        
+        # Backward pass
+        loss.backward()
+        optimizer.step()
+        
+        running_loss += loss.item()
+        
+        if batch_idx % 100 == 99:
+            print(f'Epoch {epoch+1}, Batch {batch_idx+1}/{len(train_loader)}, Loss: {running_loss/100:.4f}')
+            running_loss = 0.0
+
+# Evaluation loop
+fusion_model.eval()
+correct = 0
+total = 0
+
+with torch.no_grad():
+    for opticalflow, image, labels in test_loader:
+        outputs = fusion_model(opticalflow, image)
+        _, predicted = torch.max(outputs.data, 1)
+        total += labels.size(0)
+        correct += (predicted == labels).sum().item()
+
+print(f'Accuracy on test set: {100 * correct / total:.2f}%')

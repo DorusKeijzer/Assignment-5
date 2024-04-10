@@ -1,4 +1,6 @@
 data/HMDB51/videos
 data/HMDB51/optical_flow
 data/HMDB51/mid_frames
+data/HMDB51/optical_flow_mid_frames
+
 data/stanford40/frames

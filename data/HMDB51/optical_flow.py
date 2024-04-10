@@ -16,7 +16,7 @@ def split_indices(length: int, intervals: int):
 
 def get_output(video_path:str, frame_no: int)-> str:
     filename = video_path.split("\\")[-1]
-    output = "optical_flow/" + filename[:-4] + "_opticalflow_" +str(frame_no) + ".npy"
+    output = "optical_flow_mid_frames/" + filename[:-4] + "_opticalflow_" +str(frame_no) + ".npy"
     return output
 
 def calculate_optical_flow(video_path: str, intervals: int) -> None:
@@ -60,7 +60,7 @@ def calculate_optical_flow(video_path: str, intervals: int) -> None:
 
 
 if __name__ == "__main__":
-    INTERVALS_PER_VIDEO = 4
+    INTERVALS_PER_VIDEO = 1
 
     files = glob("videos/*")
     for i, file in enumerate(files):
