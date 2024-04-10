@@ -148,6 +148,8 @@ if __name__ == "__main__":
     model_path = argv[1]
     dataset = argv[2]
     epochs = int(argv[3])
+    if len(argv) >4:
+        weights_path = argv[4]
     import importlib.util
 
     def load_python_file(file_path):
@@ -157,6 +159,11 @@ if __name__ == "__main__":
         return module
 
     model: torch.nn.Module = load_python_file(model_path).model()
+
+    # Load weights if provided
+    if weights_path:
+        model.load_state_dict(torch.load(weights_path))
+
 
     if dataset == "OF":
         from data.HMDB51.dataset import optical_flow_test_dataloader, optical_flow_train_dataloader
