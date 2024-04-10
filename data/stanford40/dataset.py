@@ -55,9 +55,9 @@ train_data_transforms = transforms.Compose([
 ])
 
 
-test_data = StanfordDataSet("data/stanford40/test_annotation.csv", "frames",val_data_transforms)
+train_data = StanfordDataSet("data/stanford40/test_annotation.csv", "frames",train_data_transforms)
 val_data = StanfordDataSet("data/stanford40/val_annotation.csv", "frames",val_data_transforms)
-train_data = StanfordDataSet("data/stanford40/train_annotation.csv", "frames",train_data_transforms)
+test_data = StanfordDataSet("data/stanford40/train_annotation.csv", "frames",val_data_transforms)
 
 from torch.utils.data import DataLoader
 

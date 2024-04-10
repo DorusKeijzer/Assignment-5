@@ -46,7 +46,8 @@ def train(model: nn.Module,
           epochs: int,
           decrease_learning_rate = False):            #change last option to 'true' to implement decreasing learning rate for choice task 1
     print("Starting training...")
-    best_val_accuracy = 1e10
+    best_val_accuracy = 0
+    global best_epoch, best_model
     for epoch in range(epochs):
         print(f"Epoch {epoch+1}")
         print("=====================================")
@@ -82,7 +83,7 @@ def train(model: nn.Module,
                 print(f"Batch: {i:>3}/{len(train_loader)}, training loss: {avg_train_loss:.4f}")
 
         val_loss, val_accuracy = evaluate_model(model, criterion, val_loader)
-        if val_accuracy < best_val_accuracy:
+        if val_accuracy > best_val_accuracy:
             best_val_accuracy = val_accuracy
             best_epoch = epoch + 1
             best_model = model.state_dict()
@@ -118,7 +119,7 @@ def plot_graphs(training_loss, eval_loss, training_accuracy, eval_accuracy, titl
 
     # Plot training and eval accuracy over time
     axes[1].plot(epochs, training_accuracy, label='Training Accuracy', color='black')
-    axes[1].plot(epochs, eval_accuracy, label='Eval Accuracy', color='gray', linestyle='--')
+    axes[1].plot(epochs, eval_accuracy, label='Eval Accuracy', color='red', linestyle='--')
     axes[1].set_xlabel('Epoch')
     axes[1].set_ylabel('Accuracy')
     axes[1].set_xticks(epochs)
@@ -134,6 +135,7 @@ def plot_graphs(training_loss, eval_loss, training_accuracy, eval_accuracy, titl
 def savemodel(model_name):
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     filename = f"{model_name}_epoch_{best_epoch}_{timestamp}"
+
     plot_graphs(training_losses,val_losses, training_accuracies, val_accuracies , filename)
 
     print(f"Saving best model to {filename}.pth")
@@ -165,6 +167,7 @@ if __name__ == "__main__":
 
     # Load weights if provided
     if weights_path:
+        print(f"Loading weights from {weights_path}")
         model.load_state_dict(torch.load(weights_path))
 
 
