@@ -78,7 +78,7 @@ def train(model: nn.Module,
             train_loss += loss.item() * inputs.size(0)
 
             if i % interval == 0 or i == len(train_loader):  # Print when a batch is completed or it's the last batch
-                avg_train_loss = train_loss / ((i + 1) * 1)
+                avg_train_loss = train_loss / ((i + 1) * 1) 
                 print(f"Batch: {i:>3}/{len(train_loader)}, training loss: {avg_train_loss:.4f}")
 
         val_loss, val_accuracy = evaluate_model(model, criterion, val_loader)

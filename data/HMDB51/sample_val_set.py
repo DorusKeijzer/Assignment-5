@@ -19,8 +19,8 @@ train_indices = indices[val_size:]
 print(len(val_indices))
 print(len(train_indices))
 
-with open("train_annotation.csv") as orig_train:
-    with open("val_annotation.csv", "w", newline="") as vals,  open("new_train_annotation.csv", "w", newline="") as new_train:
+with open("mid_frame_train.csv") as orig_train:
+    with open("mid_frame_val.csv", "w", newline="") as vals,  open("new_mid_frame_train.csv", "w", newline="") as new_train:
         valwriter = csv.writer(vals)
         trainwriter = csv.writer(new_train)
         for i, line in enumerate(orig_train):

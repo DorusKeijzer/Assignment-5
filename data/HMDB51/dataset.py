@@ -19,18 +19,41 @@ class HMDB51Dataset(Dataset):
 
     def __getitem__(self, idx):
         image_path = os.path.join(self.image_dir, self.image_labels.iloc[idx, 0])
-        image = np.load(image_path)
+        image = Image.open(image_path).convert("RGB")  # Open image as PIL Image and convert to RGB
         label = self.image_labels.iloc[idx, 1]
+
+        # Resize image to fixed size (with padding if necessary)
+        image = resize(image, self.resize_shape)
+
         if self.transform:
             image = self.transform(image)
         if self.target_transform:
             label = self.target_transform(label)
         return image, label
 
+from torchvision import transforms
+mean = [0.485, 0.456, 0.406]
+std = [0.229, 0.224, 0.225]
+
+val_data_transforms = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize(mean=mean, std=std)
+])
+
+# Define the transform for training data with augmentation and ImageNet normalization
+train_data_transforms = transforms.Compose([
+        transforms.RandomHorizontalFlip(),
+        transforms.RandomRotation(10),
+        transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),
+        transforms.RandomResizedCrop(224),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=mean, std=std)
+])
+
     
-mid_frame_test_data = HMDB51Dataset("data/HMDB51/mid_frame_test.csv", "mid_frames")
-mid_frame_training_data = HMDB51Dataset("data/HMDB51/mid_frame_train.csv", "mid_frames")
-mid_frame_val_data = HMDB51Dataset("data/HMDB51/mid_frame_val.csv", "mid_frames")
+mid_frame_test_data = HMDB51Dataset("data/HMDB51/mid_frame_test.csv", "mid_frames",val_data_transforms)
+mid_frame_training_data = HMDB51Dataset("data/HMDB51/mid_frame_train.csv", "mid_frames", train_data_transforms)
+mid_frame_val_data = HMDB51Dataset("data/HMDB51/mid_frame_val.csv", "mid_frames",val_data_transforms)
 
 from torch.utils.data import DataLoader
 
