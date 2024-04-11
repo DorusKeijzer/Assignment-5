@@ -28,7 +28,16 @@ class model(nn.Module):
         
         # dropout layer
         self.dropout = nn.Dropout(0.5)
-        
+        self.initialize_weights()
+
+    def initialize_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
+                if m.weight.requires_grad:
+                    init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+                if m.bias is not None and m.bias.requires_grad:
+                    init.constant_(m.bias, 0)
+
     def forward(self, x):
         # Input size: [batch_size, channels, height, width]
         # Transpose the input tensor to [batch_size, channels, height, width]

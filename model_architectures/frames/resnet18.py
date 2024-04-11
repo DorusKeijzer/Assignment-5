@@ -12,7 +12,7 @@ class model(nn.Module):
         resnet = models.resnet18(pretrained=True)
         
         # Modify the final layer
-        resnet.fc = nn.Linear(resnet.fc.in_features, 12)
+        resnet.fc = nn.Linear(resnet.fc.in_features, 128)
         
         # Assign the modified ResNet to self.resnet
         self.resnet = resnet

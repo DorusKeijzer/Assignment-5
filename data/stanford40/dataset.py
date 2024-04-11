@@ -49,7 +49,7 @@ train_data_transforms = transforms.Compose([
         transforms.RandomHorizontalFlip(),
         transforms.RandomRotation(10),
         transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),
-        transforms.RandomResizedCrop(224),
+        transforms.RandomResizedCrop(200),
     transforms.ToTensor(),
     transforms.Normalize(mean=mean, std=std)
 ])

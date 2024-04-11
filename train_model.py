@@ -20,15 +20,11 @@ def evaluate_model(model, criterion, data_loader):
     total = 0
     with torch.no_grad():
         for inputs, labels in data_loader:
-            outputs = model(inputs)
-            if model.intermediate_layers: # in case of multiple layers, average the loss over each layer
-                for output in outputs:
-                    loss += criterion(output, labels).item() * inputs.size(0)/len(outputs)
-                # only the final output is used for prediction accuracy
-                _, predicted = torch.max(outputs[0], 1)
-            else:
-                loss += criterion(outputs, labels).item() * inputs.size(0)
-                _, predicted = torch.max(outputs, 1)
+            outputs = model(inputs) 
+            if len(outputs) > 1:
+                outputs, _ = outputs
+            loss += criterion(outputs, labels).item() * inputs.size(0)
+            _, predicted = torch.max(outputs, 1)
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
 
@@ -37,6 +33,7 @@ def evaluate_model(model, criterion, data_loader):
     accuracy = correct / total
 
     return avg_loss, accuracy
+
 
 def train(model: nn.Module, 
           train_loader, 
@@ -65,21 +62,16 @@ def train(model: nn.Module,
         for i, (inputs, labels) in enumerate(train_loader):
             optimizer.zero_grad()
 
-            # if the model implements intermediate layers, this will average the loss of each layer
-            # if the model has only one layer, it works as normal
-            outputs = model(inputs)
-            if model.intermediate_layers:
-                loss = 0
-                for output in outputs:
-                    loss += criterion(output, labels)/len(outputs)
-            else:
-                loss = criterion(outputs, labels)
+            outputs = model(inputs) 
+            if len(outputs) > 1:
+                outputs, _ = outputs
+            loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
             train_loss += loss.item() * inputs.size(0)
 
             if i % interval == 0 or i == len(train_loader):  # Print when a batch is completed or it's the last batch
-                avg_train_loss = (train_loss / ((i + 1) * 1)) /len(train_loader)
+                avg_train_loss = train_loss / (inputs.size(0) * (i+1)) 
                 print(f"Batch: {i:>3}/{len(train_loader)}, training loss: {avg_train_loss:.4f}")
 
         val_loss, val_accuracy = evaluate_model(model, criterion, val_loader)
@@ -113,7 +105,6 @@ def plot_graphs(training_loss, eval_loss, training_accuracy, eval_accuracy, titl
     axes[0].plot(epochs, eval_loss, label='Eval Loss', color='red', linestyle='--')
     axes[0].set_xlabel('Epoch')
     axes[0].set_ylabel('Loss')
-    axes[0].set_xticks(epochs)
     axes[0].legend()
     axes[0].set_title('Training and Eval Loss')
 
@@ -122,7 +113,6 @@ def plot_graphs(training_loss, eval_loss, training_accuracy, eval_accuracy, titl
     axes[1].plot(epochs, eval_accuracy, label='Eval Accuracy', color='red', linestyle='--')
     axes[1].set_xlabel('Epoch')
     axes[1].set_ylabel('Accuracy')
-    axes[1].set_xticks(epochs)
     axes[1].legend()
     axes[1].set_title('Training and Eval Accuracy')
 
@@ -172,13 +162,16 @@ if __name__ == "__main__":
 
 
     if dataset == "OF":
-        from data.HMDB51.dataset import optical_flow_test_dataloader, optical_flow_train_dataloader
+        from data.HMDB51.dataset import optical_flow_test_dataloader, optical_flow_train_dataloader, optical_flow_val_dataloader
+        val_data = optical_flow_val_dataloader
         test_data = optical_flow_test_dataloader
         training_data = optical_flow_train_dataloader
         storage_location = "optical_flow"
+
     if dataset == "HMDB_frames":
-        from data.HMDB51.dataset import mid_frame_test_dataloader, mid_frame_train_dataloader
+        from data.HMDB51.dataset import mid_frame_test_dataloader, mid_frame_train_dataloader, mid_frame_val_dataloader
         test_data = mid_frame_test_dataloader
+        val_data = mid_frame_val_dataloader
         training_data = mid_frame_train_dataloader
         storage_location = "frames/HMDB"
 
@@ -189,6 +182,12 @@ if __name__ == "__main__":
         training_data = train_dataloader
         test_data = test_dataloader
 
+    if dataset == "fusion": 
+        # from data.HMDB51.dataset import fusion_dataloader ... 
+        val_data = ...
+        training_data = ...
+        test_data = ...
+        
     print(f"training {model.name} from {model_path} on {storage_location} data.")
 
     criterion = nn.CrossEntropyLoss()
