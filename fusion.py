@@ -22,6 +22,10 @@ class model(nn.Module):
         self.fc_fusion = nn.Linear(128, 256)  
         self.fc_hidden = nn.Linear(256, 256)  
         self.fc_output = nn.Linear(256, 12)  
+
+        # batch norm layer
+        self.bn1 = nn.BatchNorm1d(256)
+
         self.initialize_weights()
 
     def initialize_weights(self):
@@ -73,7 +77,8 @@ class model(nn.Module):
         fused_features = torch.flatten(fused_features, start_dim=1)
         # Fusion layer
         x = torch.relu(self.fc_fusion(fused_features))
-
+        # batch norm    
+        x = self.bn1(x)
         # hidden layers
         x = torch.relu(self.fc_hidden(x))
 

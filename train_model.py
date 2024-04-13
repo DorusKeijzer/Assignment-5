@@ -81,6 +81,8 @@ def train(model: nn.Module,
                 outputs, _ = outputs
             loss = criterion(outputs, labels)
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 2.0)
+
             optimizer.step()
             train_loss += loss.item() * inputs.size(0)
 
@@ -209,7 +211,7 @@ if __name__ == "__main__":
     print(f"training {model.name} from {model_path} on {storage_location} data.")
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(model.parameters(), lr=0.0001, momentum=0.9)
+    optimizer = optim.SGD(model.parameters(), lr=0.0001, momentum=0.9, weight_decay=0.01)
     from torch.optim.lr_scheduler import ReduceLROnPlateau
 
     scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=5, verbose=True)
