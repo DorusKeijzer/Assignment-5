@@ -6,6 +6,7 @@ import torch
 from torch import optim
 import matplotlib.pyplot as plt
 import numpy as np
+import math
 training_losses = []
 val_losses = []
 val_accuracies = []
@@ -41,23 +42,36 @@ def train(model: nn.Module,
           criterion, 
           optimizer: torch.optim.Adam, 
           epochs: int,
-          decrease_learning_rate = False):            #change last option to 'true' to implement decreasing learning rate for choice task 1
+          scheduler, 
+          cyclic_learning_rate = False):            #change last option to 'true' to implement decreasing learning rate for choice task 1
+    
     print("Starting training...")
     best_val_accuracy = 0
     global best_epoch, best_model
-    for epoch in range(epochs):
-        print(f"Epoch {epoch+1}")
+    for epoch in range(1, epochs + 1):
+        print(f"Epoch {epoch}")
         print("=====================================")
-        # if deacrease_learning_rate is set to True:
-        if decrease_learning_rate and epoch > 0 and epoch % 4 == 0:
-            # halves learning rate every 5th epoch for choice task #1
-            for param_group in optimizer.param_groups:
-                lr = param_group['lr']
-                lr /= 2
-                param_group['lr'] = lr 
-            print(f"Halved learning rate to {lr}")
+        if cyclic_learning_rate:
+            LR_min = 0.01
+            LR_max = 0.0001
 
+            # Define the total number of epochs and cycles
+            total_cycles = 10
+
+            # Calculate the progress within the current cycle
+            progress_in_cycle = ((epoch - 1) % (epochs // total_cycles)) / (epochs // total_cycles)
+            
+            # Calculate the current learning rate using cosine annealing
+            lr = LR_min + 0.5 * (LR_max - LR_min) * (1 + math.cos(progress_in_cycle * math.pi))
+            
+            # Update the learning rate
+            for param_group in optimizer.param_groups:
+                param_group['lr'] = lr
+            
+            print(f"Learning rate: {lr}")
+        
         train_loss = 0.0
+
         interval = int(len(train_loader)/8)
         for i, (inputs, labels) in enumerate(train_loader):
             optimizer.zero_grad()
@@ -81,7 +95,10 @@ def train(model: nn.Module,
             best_model = model.state_dict()
             print("This is the best model so far. Hurray.")
         T_loss, T_acc = evaluate_model(model, criterion, train_loader)
-
+        
+        scheduler.step(val_loss)
+        lr = scheduler.get_last_lr()
+        print(f"Current learning rate: {lr}")
         val_losses.append(val_loss)
         val_accuracies.append(val_accuracy)
         training_accuracies.append(T_acc)
@@ -191,7 +208,11 @@ if __name__ == "__main__":
     print(f"training {model.name} from {model_path} on {storage_location} data.")
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr= 0.001)
+    optimizer = optim.SGD(model.parameters(), lr=0.0001, momentum=0.9)
+    from torch.optim.lr_scheduler import ReduceLROnPlateau
+
+    scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=5, verbose=True)
+
     def signal_handler(sig, frame):
         # This function will be called when a keyboard interrupt is detected
         print('Keyboard interrupt detected. Storing best model...')
@@ -208,5 +229,6 @@ if __name__ == "__main__":
             criterion, 
             optimizer, 
             epochs,
-            decrease_learning_rate=False)
+            scheduler,
+            cyclic_learning_rate=False)
     savemodel(f"{model.name}")

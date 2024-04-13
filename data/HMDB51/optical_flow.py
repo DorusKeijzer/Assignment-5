@@ -14,15 +14,10 @@ def split_indices(length: int, intervals: int):
     return indices
 
 
-def get_output(video_path:str, frame_no: int)-> str:
-    filename = video_path.split("\\")[-1]
-    output = "optical_flow_mid_frames/" + filename[:-4] + "_opticalflow_" +str(frame_no) + ".npy"
-    return output
-
 def calculate_optical_flow(video_path: str, intervals: int) -> None:
     # Open the video file
     cap = cv.VideoCapture(video_path)
-    filenames = []
+    flows = []
 
     # Initialize variables for the first frame
     ret, frame1 = cap.read()
@@ -44,9 +39,7 @@ def calculate_optical_flow(video_path: str, intervals: int) -> None:
         next = cv.cvtColor(frame2, cv.COLOR_BGR2GRAY)
         if frame_no in split:
             # Calculate the optical flow using Lucas-Kanade method
-            flow = cv.calcOpticalFlowFarneback(prvs, next, None, 0.5, 3, 15, 3, 5, 1.2, 0)
-            filename = get_output(video_path, interval_no)
-            np.save(filename, flow)
+            flows.append(cv.calcOpticalFlowFarneback(prvs, next, None, 0.5, 3, 15, 3, 5, 1.2, 0))
             interval_no+=1
         
         if interval_no == intervals:
@@ -57,12 +50,31 @@ def calculate_optical_flow(video_path: str, intervals: int) -> None:
         prvs = next
 
     cap.release()
+    return flows
+
+def filename(inputstring: str) -> str:
+    string = inputstring[7:]
+    string = string.split(".")[0]
+    return string
 
 
 if __name__ == "__main__":
-    INTERVALS_PER_VIDEO = 1
+    import os
+    INTERVALS_PER_VIDEO = 4
+    output_directory = "of_stacks"
+    os.makedirs(output_directory, exist_ok=True)
 
     files = glob("videos/*")
-    for i, file in enumerate(files):
+    for _, file in enumerate(files):
         print(file)
-        filenames = calculate_optical_flow(file, INTERVALS_PER_VIDEO)
+        frames = calculate_optical_flow(file, INTERVALS_PER_VIDEO)
+
+        reshaped_frames = [frame.reshape((*frame.shape[:-1], 1, frame.shape[-1])) for frame in frames]
+
+        # Stack the arrays along the third axis
+        stacked_array = np.concatenate(reshaped_frames, axis=2)
+
+        # Reshape the stacked array to have shape (240, 320, 8)
+        stacked_array = stacked_array.reshape((*stacked_array.shape[:2], -1))
+        print(stacked_array.shape)
+        np.save(os.path.join(output_directory, f"{filename(file)}.npy"), stacked_array)

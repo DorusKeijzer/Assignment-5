@@ -1,7 +1,7 @@
 from glob import glob
 from numpy import load, max, mean, std, save
 
-ofs = glob("optical_flow/*")
+ofs = glob("optical_flow_mid_frames/*")
 
 for of in ofs:
     array = load(of)

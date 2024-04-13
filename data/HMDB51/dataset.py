@@ -63,9 +63,36 @@ mid_frame_test_dataloader = DataLoader(mid_frame_test_data, batch_size=16, shuff
 mid_frame_val_dataloader = DataLoader(mid_frame_val_data, batch_size=16, shuffle=True)
 
 from skimage.transform import resize
-
+from random import random
 # Define custom transformation for two-channel numpy arrays
-class CustomTransform(object):
+class TrainingTransforms(object):
+    def __init__(self, resize_shape=(224, 224), mean=(0, 0), std=(1, 1)):
+        self.resize_shape = resize_shape
+        self.mean = mean
+        self.std = std
+
+    def __call__(self, optical_flow_field):
+        # Resize optical flow field
+        optical_flow_field = resize(optical_flow_field, self.resize_shape)
+
+        # Random crop
+        h, w = optical_flow_field.shape[:2]
+        top = (h - self.resize_shape[0]) // 2
+        left = (w - self.resize_shape[1]) // 2
+        bottom = top + self.resize_shape[0]
+        right = left + self.resize_shape[1]
+        optical_flow_field = optical_flow_field[top:bottom, left:right]
+
+        # random flip
+        if random() < 0.5:  # 50% chance of flipping
+            optical_flow_field = np.fliplr(optical_flow_field)
+
+        # Normalize
+        optical_flow_field = (optical_flow_field - self.mean) / self.std
+
+        return optical_flow_field
+
+class TestingTransforms(object):
     def __init__(self, resize_shape=(224, 224), mean=(0, 0), std=(1, 1)):
         self.resize_shape = resize_shape
         self.mean = mean
@@ -80,8 +107,7 @@ class CustomTransform(object):
 
         return optical_flow_field
 
-
-class HMDB51Dataset_of(Dataset):
+class OF_data(Dataset):
     def __init__(self, annotations_file, optical_flow_field_dir, transform=None, target_transform=None, resize_shape=(240, 320)):
         self.optical_flow_field_labels = pd.read_csv(annotations_file)
         self.optical_flow_field_dir = "data/HMDB51/" + optical_flow_field_dir
@@ -107,16 +133,16 @@ class HMDB51Dataset_of(Dataset):
 
 # Define transformations for training and validation data
 resize_shape = (244, 244)
-mean = (0, 0)
-std = (1, 1)
+mean = (0, 0, 0, 0, 0, 0, 0, 0,)
+std = (1, 1, 1, 1, 1, 1, 1, 1)
 
-train_data_transforms = CustomTransform(resize_shape=resize_shape, mean=mean, std=std)
-val_data_transforms = CustomTransform(resize_shape=resize_shape, mean=mean, std=std)
+train_data_transforms = TrainingTransforms(resize_shape=resize_shape, mean=mean, std=std)
+val_data_transforms = TestingTransforms(resize_shape=resize_shape, mean=mean, std=std)
 
 # Create datasets and data loaders
-optical_flow_test_data = HMDB51Dataset_of("data/HMDB51/of_test.csv", "optical_flow", val_data_transforms)
-optical_flow_training_data = HMDB51Dataset_of("data/HMDB51/of_train.csv", "optical_flow", train_data_transforms)
-optical_flow_val_data = HMDB51Dataset_of("data/HMDB51/of_val.csv", "optical_flow", val_data_transforms)
+optical_flow_test_data = OF_data("data/HMDB51/of_test.csv", "of_stacks", val_data_transforms)
+optical_flow_training_data = OF_data("data/HMDB51/of_train.csv", "of_stacks", train_data_transforms)
+optical_flow_val_data = OF_data("data/HMDB51/of_val.csv", "of_stacks", val_data_transforms)
 
 optical_flow_val_dataloader = DataLoader(optical_flow_val_data, batch_size=16, shuffle=True)
 optical_flow_train_dataloader = DataLoader(optical_flow_training_data, batch_size=16, shuffle=True)

@@ -32,3 +32,9 @@ class model(nn.Module):
         penultimate_output = nn.ReLU()(self.fc1(x))
         output = nn.Softmax(dim=1)(self.fc2(penultimate_output))
         return output, penultimate_output
+
+if __name__ == "__main__":
+    from torchsummary import summary
+    model = model()
+    print(model.name)
+    summary(model, (3, 224, 224))

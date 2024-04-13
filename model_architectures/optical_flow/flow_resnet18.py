@@ -30,8 +30,17 @@ class model(nn.Module):
                     init.constant_(m.bias, 0)
 
     def forward(self, x):
+        # fixes the messed up order of input vector dimensions and data type
+        x = x.permute(0, 3, 1, 2).float()
+
         x = self.features(x)
         x = torch.flatten(x, 1)
         penultimate_output = nn.ReLU()(self.fc1(x))
         output = nn.Softmax(dim=1)(self.fc2(penultimate_output))
         return output, penultimate_output
+
+if __name__ == "__main__":
+    from torchsummary import summary
+    model = model()
+    print(model.name)
+    summary(model, (2, 224, 224))
