@@ -13,7 +13,7 @@ class model(nn.Module):
         self.resnet = models.resnet18(pretrained=True)
         
         # Modify the first convolutional layer to accept 2-channel images
-        self.resnet.conv1 = nn.Conv2d(2, 64, kernel_size=7, stride=2, padding=3, bias=False)
+        self.resnet.conv1 = nn.Conv2d(8, 64, kernel_size=7, stride=2, padding=3, bias=False)
         
         # Modify the final layer
         self.features = nn.Sequential(*list(self.resnet.children())[:-1])
@@ -44,3 +44,4 @@ if __name__ == "__main__":
     model = model()
     print(model.name)
     summary(model, (2, 224, 224))
+

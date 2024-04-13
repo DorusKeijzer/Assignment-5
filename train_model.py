@@ -22,7 +22,7 @@ def evaluate_model(model, criterion, data_loader):
     with torch.no_grad():
         for inputs, labels in data_loader:
             outputs = model(inputs) 
-            if len(outputs) > 1:
+            if len(outputs) == 2:
                 outputs, _ = outputs
             loss += criterion(outputs, labels).item() * inputs.size(0)
             _, predicted = torch.max(outputs, 1)
@@ -77,7 +77,7 @@ def train(model: nn.Module,
             optimizer.zero_grad()
 
             outputs = model(inputs) 
-            if len(outputs) > 1:
+            if len(outputs) == 2:
                 outputs, _ = outputs
             loss = criterion(outputs, labels)
             loss.backward()
@@ -200,10 +200,11 @@ if __name__ == "__main__":
         test_data = test_dataloader
 
     if dataset == "fusion": 
-        # from data.HMDB51.dataset import fusion_dataloader ... 
-        val_data = ...
-        training_data = ...
-        test_data = ...
+        from data.HMDB51.dataset import fusion_test_dataloader, fusion_train_dataloader, fusion_val_dataloader
+        storage_location = "fusion"
+        val_data = fusion_val_dataloader
+        training_data = fusion_train_dataloader
+        test_data = fusion_test_dataloader
         
     print(f"training {model.name} from {model_path} on {storage_location} data.")
 

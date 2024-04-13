@@ -107,6 +107,29 @@ class TestingTransforms(object):
 
         return optical_flow_field
 
+class FusionTransforms(object):
+    def __init__(self, resize_shape=(224, 224)):
+        self.resize_shape = resize_shape
+
+    def __call__(self, optical_flow_field):
+        # Resize optical flow field
+        optical_flow_field = resize(optical_flow_field, self.resize_shape)
+
+        return optical_flow_field
+
+class FusionTrainTransforms(object):
+    def __init__(self, resize_shape=(224, 224)):
+        self.resize_shape = resize_shape
+
+    def __call__(self, optical_flow_field):
+        if random() < 0.5:  # 50% chance of flipping
+            optical_flow_field = np.fliplr(optical_flow_field)
+
+        # Resize optical flow field
+        optical_flow_field = resize(optical_flow_field, self.resize_shape)
+
+        return optical_flow_field
+
 class OF_data(Dataset):
     def __init__(self, annotations_file, optical_flow_field_dir, transform=None, target_transform=None, resize_shape=(240, 320)):
         self.optical_flow_field_labels = pd.read_csv(annotations_file)
@@ -132,7 +155,7 @@ class OF_data(Dataset):
 
 
 # Define transformations for training and validation data
-resize_shape = (244, 244)
+resize_shape = (224, 224)
 mean = (0, 0, 0, 0, 0, 0, 0, 0,)
 std = (1, 1, 1, 1, 1, 1, 1, 1)
 
@@ -147,3 +170,14 @@ optical_flow_val_data = OF_data("data/HMDB51/of_val.csv", "of_stacks", val_data_
 optical_flow_val_dataloader = DataLoader(optical_flow_val_data, batch_size=16, shuffle=True)
 optical_flow_train_dataloader = DataLoader(optical_flow_training_data, batch_size=16, shuffle=True)
 optical_flow_test_dataloader = DataLoader(optical_flow_test_data, batch_size=16, shuffle=True)
+
+fusion_transforms = FusionTransforms()
+fursion_train_transforms = FusionTrainTransforms()
+
+fusion_val_data = OF_data("data/HMDB51/of_val.csv", "fusion", fusion_transforms)
+fusion_training_data = OF_data("data/HMDB51/of_train.csv", "fusion", fursion_train_transforms)
+fusion_test_data = OF_data("data/HMDB51/of_test.csv", "fusion", fusion_transforms)
+
+fusion_val_dataloader = DataLoader(fusion_val_data, batch_size=16, shuffle=True)
+fusion_train_dataloader = DataLoader(fusion_training_data, batch_size=16, shuffle=True)
+fusion_test_dataloader = DataLoader(fusion_test_data, batch_size=16, shuffle=True)
